@@ -231,13 +231,13 @@ var readdirRecurse = function(startDir,extension,callback) {
 				if ((sourceFileRole == FILE_ROLE_LAYOUT) && (firstTwoChars != '$l')) return false;
 				if ((sourceFileRole == FILE_ROLE_MODULE) && (firstTwoChars != '$m')) return false;
 
-				// validate naming for a config variable
+				// validate naming for a config.scss variable
 				if (
 					(sourceFileRole == FILE_ROLE_CONFIG) &&
 					(!/^\$[a-z][A-Za-z0-9_]+:/.test(lineText))
 				) return false;
 
-				// validate naming for a layout variable
+				// validate naming for a layout.scss variable
 				if (
 					(sourceFileRole == FILE_ROLE_LAYOUT) &&
 					(!/^\$l[A-Z][A-Za-z0-9]+:/.test(lineText))
@@ -265,10 +265,10 @@ var readdirRecurse = function(startDir,extension,callback) {
 				if ((sourceFileRole == FILE_ROLE_LAYOUT) && (firstTwoChars != '%l')) return false;
 				if ((sourceFileRole == FILE_ROLE_MODULE) && (firstTwoChars != '%m')) return false;
 
-				// validate naming for a layout placeholder
+				// validate naming for a layout.scss placeholder
 				if (
 					(sourceFileRole == FILE_ROLE_LAYOUT) &&
-					(!/^%l[A-Z][A-Za-z0-9]+[ {]/.test(lineText))
+					(!/^%l[A-Z][A-Za-z0-9]+[,:\. {]/.test(lineText))
 				) return false;
 
 				// validate naming for a component/module placeholder
@@ -277,7 +277,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 					var isSimpleComponentPlaceholder;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
-						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[, {]');
+						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[,:\\. {]');
 						if (namespaceFormatRegexp.test(lineText.toLowerCase())) {
 							isSimpleComponentPlaceholder = true;
 						}
@@ -285,10 +285,10 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 					if (!isSimpleComponentPlaceholder) {
 						// after underscore, first character must be lowercase
-						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[, {]/.test(lineText)) return false;
+						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:\. {]/.test(lineText)) return false;
 
 						// ensure prefix namespace for placeholder matches source file base name
-						var namespaceFormatRegexp = RegExp('^%[cm]' + sourceFileBaseName + '_[a-z0-9]+[, {]');
+						var namespaceFormatRegexp = RegExp('^%[cm]' + sourceFileBaseName + '_[a-z0-9]+[,:\\. {]');
 						if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
 					}
 				}
@@ -300,10 +300,10 @@ var readdirRecurse = function(startDir,extension,callback) {
 			function lintClassName(lineText) {
 
 				// class name should be all lower case letters, digits and dashes only
-				if (!/^\.[a-z0-9-]+[, {]/.test(lineText)) return false;
+				if (!/^\.[a-z0-9-]+[,:\. {]/.test(lineText)) return false;
 
 				// validate naming for class name
-				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[-, {]');
+				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[,:\\.\\- {]');
 				if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
 
 				// all valid
@@ -323,12 +323,15 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 				// root level comment format
 				if (/^\/\//.test(lineText)) {
-					// is comment style [// -- detail --]
-					if (
-						isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_LAYOUT,FILE_ROLE_MIXIN,FILE_ROLE_MODULE) &&
-						(!/^\/\/ -- [^ ].+[^ ] --/.test(lineText))
-					) {
-						addLintError(lineNumber,'Root level comments should be in the form -> // -- top level comment --');
+					// if TODO comment, skip checks
+					if (!/^\/\/ +TODO:/.test(lineText)) {
+						// is comment style [// -- detail --]
+						if (
+							isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_LAYOUT,FILE_ROLE_MIXIN,FILE_ROLE_MODULE) &&
+							(!/^\/\/ -- [^ ].+[^ ] --/.test(lineText))
+						) {
+							addLintError(lineNumber,'Root level comments should be in the form -> // -- top level comment --');
+						}
 					}
 
 					// done
@@ -435,7 +438,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 		var summaryCounts = getLintResultSummaryCounts();
 		if (summaryCounts === false) {
 			// no errors found
-			console.log('No linting errors were found!');
+			console.log('No linting errors found!');
 			console.log();
 
 		} else {
