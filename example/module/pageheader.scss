@@ -1,0 +1,37 @@
+$mPageHeader_iconSize: 10px;
+
+
+%mPageHeader_iconPopout {
+	border: 3px solid $colorBrown;
+}
+
+// -- header frame --
+.pageheader {
+	@extend %lPageFrame;
+	background: $colorBlueHeader;
+	border: 1px solid $colorRed;
+	padding: $spacingBase;
+
+	> .navigationarea {
+		@extend %cNavigationArea;
+		// ...or to make it 'pop'
+		//@extend %cNavigationArea_makeItPop;
+	}
+}
+
+// -- navigation item --
+.pageheader-navigationitem {
+	@include borderMagic(3px);
+	font-size: $fontSizeMedium;
+	text-align: center;
+	white-space: nowrap;
+	width: 30%;
+
+	// icon treatment
+	> .icon {
+		@extend %mPageHeader_iconPopout;
+		background: $colorGreen;
+		height: $mPageHeader_iconSize;
+		width: $mPageHeader_iconSize;
+	}
+}

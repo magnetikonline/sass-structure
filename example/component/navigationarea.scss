@@ -1,0 +1,16 @@
+$cNavigationArea_width: 60px;
+
+
+// -- default --
+%cNavigationArea {
+	background: $colorOrange;
+	height: 20px;
+	width: $cNavigationArea_width;
+}
+
+// -- make it 'pop' --
+%cNavigationArea_makeItPop {
+	font-size: $fontSizeMega;
+	font-weight: bold;
+	width: ($cNavigationArea_width * 5);
+}
