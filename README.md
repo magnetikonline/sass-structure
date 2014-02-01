@@ -36,7 +36,7 @@ Examples of configuration kept here:
 
 I rely on configuration variables for *everything*, it not only works to keep things consistent across a project (what was the hex code for the company branded red again?) it helps me refactor and reduce excessive variations of a style item during development (do we really need 12 font sizes/16 shades of blue across the site?).
 
-Naming for variables is always `$camelCased:` and avoids any of the variable prefixing used for modules, components and layouts.
+Naming for variables is always `$camelCased` and avoids any of the variable prefixing used for modules, components and layouts.
 
 ### Libraries
 Libraries placed in [[sassroot]/lib](example/lib) are pieces of Sass/CSS code which will typically make their way into every project, nothing really project specific.

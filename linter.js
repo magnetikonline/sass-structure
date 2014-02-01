@@ -21,7 +21,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				return finish([]);
 			}
 
-			queueCount--; // drop by 1 to account for initial/recursive call to fetch();
+			queueCount--; // drop by 1 for initial/recursive call to fetch()
 			queueCount += list.length;
 
 			if (!queueCount) {
@@ -112,9 +112,13 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 		if (argvCount > 3) {
 			// invalid argument count
-			logError('Error: Invalid arguments given');
+			logError('Invalid arguments given');
 			console.log();
-			console.log(process.argv.slice(0,2).join(' '),'[SCSS scan dir]');
+
+			console.log(
+				'Usage: ' + [process.argv[0],path.basename(process.argv[1])].join(' '),
+				'[SCSS scan dir]'
+			);
 
 			return false;
 		}
@@ -249,7 +253,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 					if (!/^\$[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+:/.test(lineText)) return false;
 
 					// ensure prefix namespace for variable matches source file base name
-					var namespaceFormatRegexp = RegExp('^\\$[cm]' + sourceFileBaseName + '_[a-z0-9]+:');
+					var namespaceFormatRegexp = RegExp('^\\$[cm]' + sourceFileBaseName + '_');
 					if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
 				}
 
@@ -268,7 +272,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				// validate naming for a layout.scss placeholder
 				if (
 					(sourceFileRole == FILE_ROLE_LAYOUT) &&
-					(!/^%l[A-Z][A-Za-z0-9]+[,:\. {]/.test(lineText))
+					(!/^%l[A-Z][A-Za-z0-9]+[,:. {]/.test(lineText))
 				) return false;
 
 				// validate naming for a component/module placeholder
@@ -277,7 +281,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 					var isSimpleComponentPlaceholder;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
-						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[,:\\. {]');
+						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[,:. {]');
 						if (namespaceFormatRegexp.test(lineText.toLowerCase())) {
 							isSimpleComponentPlaceholder = true;
 						}
@@ -285,10 +289,10 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 					if (!isSimpleComponentPlaceholder) {
 						// after underscore, first character must be lowercase
-						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:\. {]/.test(lineText)) return false;
+						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:. {]/.test(lineText)) return false;
 
 						// ensure prefix namespace for placeholder matches source file base name
-						var namespaceFormatRegexp = RegExp('^%[cm]' + sourceFileBaseName + '_[a-z0-9]+[,:\\. {]');
+						var namespaceFormatRegexp = RegExp('^%[cm]' + sourceFileBaseName + '_');
 						if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
 					}
 				}
@@ -300,19 +304,19 @@ var readdirRecurse = function(startDir,extension,callback) {
 			function lintClassName(lineText) {
 
 				// class name should be all lower case letters, digits and dashes only
-				if (!/^\.[a-z0-9-]+[,:\. {]/.test(lineText)) return false;
+				if (!/^\.[a-z0-9-]+[,:. {]/.test(lineText)) return false;
 
 				// validate naming for class name
-				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[,:\\.\\- {]');
+				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[,:.\\- {]');
 				if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
 
 				// all valid
 				return true;
 			}
 
-			// build file base name from source file name (minus leading underscores) used for namespacing checks
+			// build base name from the source file name (minus a possible leading underscore) used for namespacing checks
 			var sourceFileBaseName = path.basename(sourceFile,'.' + SCSS_EXTENSION).toLowerCase();
-			sourceFileBaseName = sourceFileBaseName.replace(/^_+/,'');
+			sourceFileBaseName = sourceFileBaseName.replace(/^_/,'');
 			console.log('File:',sourceFile);
 
 			// work over each file line looking for linting errors
@@ -339,7 +343,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				}
 
 				// variables
-				// TODO: need to cover mixin variable namings
+				// TODO: need to still handle mixin variable naming checks
 				if (/^\$/.test(lineTextTrim)) {
 					if (sourceFileRole == FILE_ROLE_STYLE) {
 						// no variables in style.scss file allowed
@@ -433,7 +437,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 		console.log();
 		console.log();
-		console.log('A total of %d files linted (%d skipped)',lintedCount,resultCount - lintedCount);
+		console.log('%d files linted (%d skipped)',lintedCount,resultCount - lintedCount);
 
 		var summaryCounts = getLintResultSummaryCounts();
 		if (summaryCounts === false) {
@@ -468,7 +472,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 		} else {
 			// process result list
-			console.log('Found a total of %d file(s) for linting',resultList.length);
+			console.log('Found a total of %d file(s) for potential linting',resultList.length);
 			console.log();
 
 			processResultList(scanDir,resultList);
