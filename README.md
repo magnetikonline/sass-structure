@@ -19,14 +19,14 @@ In addition I have included a [Sass Linter utility](#sass-linter) written in Nod
 
 ## Core aims
 - Leverage Sass techniques to write documents with a [DRY](http://en.wikipedia.org/wiki/Don't_repeat_yourself) approach and encourage reuse wherever feasible.
-- With everything in Sass being global (such as [variables](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#variables_) and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_)) enforce a strong namespacing convention to avoid clobbering/clashes between isolated sections of Sass.
-- Split out Sass/CSS styling definitions into logical groupings - aiming for lower lines-of-code over multiple files rather than all-in-one monster documents.
+- With everything in Sass being essentially global (such as [variables](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#variables_) and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_)) enforce a strong namespacing convention to avoid clobbering/clashes between what should be isolated sections of Sass.
+- Split out Sass styling definitions into logical groupings - aiming for lower lines-of-code over multiple files rather than all-in-one monster documents.
 
 ## File roles
 What follows is each of the Sass file *roles* employed, their purpose and hierarchical location within a project.
 
 ### Config
-A single config file located at [[sassroot]/config.scss](example/config.scss) provides variables for all global project values/settings. The file contains **only** variable definitions, nothing else. Think of them a project constants.
+A single config file located at [[sassroot]/config.scss](example/config.scss) provides variables for all *global* project values and settings. The file contains **only** variable definitions, nothing else. Think of them a project constants.
 
 Examples of configuration kept here:
 - Font families, font sizes, line heights
@@ -34,7 +34,7 @@ Examples of configuration kept here:
 - Spacings, margins, padding
 - Color definitions
 
-I rely on configuration variables for *everything*, it not only works to keep things consistent across a project (what was the hex code for the company branded red again?) it helps me refactor and reduce excessive variations of a style item during development (do we really need 12 font sizes/16 shades of blue across the site?).
+I personally rely on configuration variables for everything possible, it not only works to keep things consistent across a project (what was the hex code for the company branded red again?) it helps me refactor and reduce excessive variations of a style item during development (do we really need 12 font sizes/16 shades of blue across the site?).
 
 Naming for variables is always `$camelCased` and avoids any of the variable prefixing used for modules, components and layouts.
 
