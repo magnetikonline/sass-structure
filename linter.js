@@ -304,7 +304,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 			function lintClassName(lineText) {
 
 				// class name should be all lower case letters, digits and dashes only
-				if (!/^\.[a-z0-9-]+[,:. {]/.test(lineText)) return false;
+				if (!/^\.[a-z0-9][a-z0-9-]*[a-z0-9][,:. {]/.test(lineText)) return false;
 
 				// validate naming for class name
 				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[,:.\\- {]');
@@ -325,7 +325,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				var lineTextTrim = lineText.trim();
 				lineText = lineText.trimRight();
 
-				// root level comment format
+				// root level comment
 				if (/^\/\//.test(lineText)) {
 					// if TODO comment, skip checks
 					if (!/^\/\/ +TODO:/.test(lineText)) {
