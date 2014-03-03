@@ -82,7 +82,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 };
 
 
-(function () {
+(function() {
 
 	var SCSS_EXTENSION = 'scss',
 		FILE_ENCODING = 'utf8',
