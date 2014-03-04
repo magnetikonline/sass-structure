@@ -97,9 +97,9 @@ $mPageHeader_iconSize: 10px;
 
 The key things to note here are:
 - Heavy use of variables, which would be defined in the projects [config](#config) file.
-- All base class names have a prefix of pageheader, matching the scss file name - `.pageheader` and `.pageheader-navigationitem`, using a single dash for sub-naming of classes within a module.
+- All base class names have a prefix matching that of the module/scss filename (`.pageheader` and `.pageheader-navigationitem`), using a single dash for namespacing of sub-classes within the module.
 - Using [child combinator](http://css-tricks.com/child-and-sibling-selectors/) selectors where possible to control targeting of styles. I typically never go deeper than three levels of nesting to keep things flatter and reduce complex CSS rule chains, hence why the styles for `.pageheader-navigationitem` are their own base class name rather than defined under `.navigationarea`.
-- All comments using the C style syntax (won't be outputted to generated CSS). Base level comments are written like `// -- module item name --`, I find the dashes help with visual separation.
+- Comments using C style syntax (won't be outputted to generated CSS). Base level comments are written as `// -- module item name --` since I find the dashes help with visual separation.
 - Variables and placeholder selectors that are used solely within this module are named in a consistent format of `$mModuleName_variableName` to avoid clashes with other parts of the Sass project.
 
 ### Components
@@ -152,7 +152,7 @@ Key points:
 ### Layout
 The [[sassroot]/layout.scss](example/layout.scss) file defines the projects grid - generally things such as column spans in traditional grid systems, main/sidebar area grids and responsive page frames. A layout area is typically a containment for [modules](#modules) and typically does not involve itself with visual elements such as color or typography.
 
-Again loosely based around the SMACSS concept of [layout rules](http://smacss.com/book/type-layout), and will **only** contain placeholder selectors which are then applied upon a module.
+Again loosely based around the SMACSS concept of [layout rules](http://smacss.com/book/type-layout), and will **only** contain placeholder selectors which are then applied to [module](#modules) classes.
 
 An example `layout.scss` defining the responsive width breakpoints for a *page frame* using my [sassboilerplate respondwidth.scss](https://github.com/magnetikonline/sassboilerplate/blob/master/respondwidth.scss) mixins.
 
