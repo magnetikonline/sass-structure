@@ -203,6 +203,8 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 		function lintFile(sourceFile,sourceFileRole,fileData) {
 
+			var sourceFileBaseName;
+
 			function isFileRoleIn() {
 
 				for (var index = arguments.length - 1;index >= 0;index--) {
@@ -269,7 +271,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				if ((sourceFileRole == FILE_ROLE_LAYOUT) && (firstTwoChars != '%l')) return false;
 				if ((sourceFileRole == FILE_ROLE_MODULE) && (firstTwoChars != '%m')) return false;
 
-				// validate naming for a layout.scss placeholder
+				// validate naming for a layout placeholder
 				if (
 					(sourceFileRole == FILE_ROLE_LAYOUT) &&
 					(!/^%l[A-Z][A-Za-z0-9]+[,:. {]/.test(lineText))
@@ -277,13 +279,15 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 				// validate naming for a component/module placeholder
 				if (isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_MODULE)) {
-					// components can have placeholders which are just the name - check first if matches
+					// components can have placeholders which are just the name - check first if this format matches
 					var isSimpleComponentPlaceholder;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
 						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[,:. {]');
 						if (namespaceFormatRegexp.test(lineText.toLowerCase())) {
+							// yes this is a simple component placeholder - ensure first character after '%c' is a letter and uppercase
 							isSimpleComponentPlaceholder = true;
+							if (!/^%c[A-Z]/.test(lineText)) return false;
 						}
 					}
 
@@ -315,7 +319,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 			}
 
 			// build base name from the source file name (minus a possible leading underscore) used for namespacing checks
-			var sourceFileBaseName = path.basename(sourceFile,'.' + SCSS_EXTENSION).toLowerCase();
+			sourceFileBaseName = path.basename(sourceFile,'.' + SCSS_EXTENSION).toLowerCase();
 			sourceFileBaseName = sourceFileBaseName.replace(/^_/,'');
 			console.log('File:',sourceFile);
 
