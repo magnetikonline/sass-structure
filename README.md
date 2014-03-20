@@ -107,7 +107,7 @@ Scss styles that are to be shared across multiple [modules](#modules) are define
 
 They could be your feature box border/shadow treatments, button styles, heading treatments, blog post body text typography, etc.
 
-For example, if we now decide that the `.navigationarea` treatment in our `.pageheader` module above is for use elsewhere in the project we could create a `component/navigationarea.scss` file:
+For example if we now decide that the `.navigationarea` treatment in our `module/pageheader.scss` module above has some reuse elsewhere in our project (e.g. we now want navigation repeated in the footer) we then create a `component/navigationarea.scss` file:
 
 ```scss
 $cNavigationArea_width: 60px;
@@ -128,7 +128,7 @@ $cNavigationArea_width: 60px;
 }
 ```
 
-...and update `module/pageheader.scss` to:
+...and then update `module/pageheader.scss` to:
 
 ```scss
 // -- header frame --
@@ -139,15 +139,18 @@ $cNavigationArea_width: 60px;
 
 	> .navigationarea {
 		@extend %cNavigationArea;
+
 		// ...or to make it 'pop'
-		//@extend %cNavigationArea_makeItPop;
+		&.pop {
+			@extend %cNavigationArea_makeItPop;
+		}
 	}
 }
 ```
 
 Key points:
 - Variables and placeholder selectors are named in a consistent format of `$cComponentName_variableName` / `%cComponentName_placeholderName`.
-- A component should not emit any CSS of it's own, **only** define placeholder selectors.
+- A component file should not emit any CSS of it's own, it **only** defines placeholder selectors.
 
 ### Layout
 The [[sassroot]/layout.scss](example/layout.scss) file defines the projects grid - generally things such as column spans in traditional grid systems, main/sidebar area grids and responsive page frames. A layout area is typically a containment for [modules](#modules) and typically does not involve itself with visual elements such as color or typography.
