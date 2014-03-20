@@ -3,7 +3,7 @@ Outlining techniques for structuring and authoring Sass documents in a modular w
 
 Borrowing heavily ideas and thinking from the excellent [Scalable and Modular Architecture for CSS](http://smacss.com) guide by [Jonathan Snook](http://snook.ca). If you haven't yet had the chance to read about SMACSS already this should be considered essential reading for anyone whom authors CSS in large, unhealthy amounts.
 
-In addition I have included a [Sass Linter utility](#sass-linter) written in NodeJS to validate Sass document naming conventions against the structures outlined below.
+In addition I have included a [Sass Linter utility](#sass-linter) written in Node.js to validate document naming conventions against the structures outlined below.
 
 - [Core aims](#core-aims)
 - [File roles](#file-roles)
@@ -18,9 +18,9 @@ In addition I have included a [Sass Linter utility](#sass-linter) written in Nod
 - [Sass Linter](#sass-linter)
 
 ## Core aims
-- Leverage Sass techniques to write documents with a [DRY](http://en.wikipedia.org/wiki/Don't_repeat_yourself) approach and encourage reuse wherever feasible.
-- With everything in Sass being essentially global (such as [variables](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#variables_) and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_)) enforce a strong namespacing convention to avoid clobbering/clashes between what should be isolated sections of Sass.
-- Split out Sass styling definitions into logical groupings - aiming for lower lines-of-code over multiple files rather than all-in-one monster documents.
+- Leverage techniques to write documents with a [DRY](http://en.wikipedia.org/wiki/Don't_repeat_yourself) approach and encourage reuse wherever feasible.
+- With everything defined in Sass being essentially global (such as [variables](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#variables_) and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_)) enforce a strong namespacing convention to avoid clobbering/clashes between what should be isolated sections of code.
+- Split out styling definitions into logical groupings - aiming for lower lines-of-code over multiple files rather than all-in-one monster documents.
 
 ## File roles
 What follows is each of the Sass file *roles* employed, their purpose and hierarchical location within a project.
@@ -39,7 +39,7 @@ I personally rely on configuration variables for everything possible, it not onl
 Naming for variables is always `$camelCased` and avoids any of the variable prefixing used for modules, components and layouts.
 
 ### Libraries
-Libraries placed in [[sassroot]/lib](example/lib) are pieces of Sass/CSS code which will typically make their way into every project, nothing really project specific.
+Libraries placed in [[sassroot]/lib](example/lib) are units of Sass/CSS code which will typically make their way into every project, nothing really project specific.
 
 For example:
 - CSS resets
@@ -64,6 +64,7 @@ $mPageHeader_iconSize: 10px;
 %mPageHeader_iconPopout {
 	border: 3px solid $colorBrown;
 }
+
 
 // -- header frame --
 .pageheader {
@@ -103,7 +104,7 @@ The key things to note here are:
 - Variables and placeholder selectors that are used solely within this module are named in a consistent format of `$mModuleName_variableName` to avoid clashes with other parts of the Sass project.
 
 ### Components
-Scss styles that are to be shared across multiple [modules](#modules) are defined in a [[sassroot]/component](example/component), using Sass's `@extend` and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_) which by design encourage reuse without bloating/repeating styling blocks.
+Scss styles that are to be shared across multiple [modules](#modules) are defined in a [[sassroot]/component](example/component), using the `@extend` directive and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_) which by design help encourage reuse with repeating styling blocks.
 
 They could be your feature box border/shadow treatments, button styles, heading treatments, blog post body text typography, etc.
 
@@ -203,7 +204,7 @@ Any additional mixins required for the project are defined in [[sassroot]/mixin.
 ### Style
 Finally, the [[sassroot]/style.scss](example/style.scss) file brings everything above together via `@import` statements and will generate the resulting CSS output document. Style itself **will not** define any variables, placeholders, mixins or CSS class definitions.
 
-The order of includes is the following and is somewhat important to support how Sass placeholders and `@extend` work together:
+The order of includes is the following and is somewhat important to support how placeholders and `@extend` work together:
 - Config
 - Mixins
 - CSS reset (the first actual output of CSS)
@@ -215,7 +216,7 @@ The order of includes is the following and is somewhat important to support how 
 View a simple [sample project](example) that puts all the concepts outlined above together.
 
 ## Sass Linter
-To help validate naming conventions and the correct use of Sass file roles in the outlined structure I have put together a [NodeJS](http://nodejs.org) script for the task.
+To help validate naming conventions and correct use of file roles within the outlined structure I have put together a [Node.js](http://nodejs.org) script for the task.
 
 Checks are very basic (simple regular expression style validations) and **does not** validate the Scss itself for syntax/validation errors.
 
