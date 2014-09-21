@@ -153,7 +153,7 @@ $cNavigationArea_width: 60px;
 
 Key points:
 - Variables and placeholder selectors are named in a consistent format of `$cComponentName_variableName` / `%cComponentName_placeholderName`.
-- A component file *does not* emit any CSS of it's own, it **only** defines placeholder selectors.
+- A component file *does not* emit CSS, it **only** defines placeholder selectors.
 
 ### Layout
 The [[sassroot]/layout.scss](example/layout.scss) file defines the projects grid - generally things such as column spans in traditional grid systems, main/sidebar area grids and responsive page frames. A layout area is typically a containment for [modules](#modules) and typically does not involve itself with visual elements such as color or typography.
