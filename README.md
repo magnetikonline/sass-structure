@@ -108,7 +108,7 @@ Sass styles that are shared across multiple [modules](#modules) are defined in a
 
 They could be your feature box border/shadow treatments, button styles, heading treatments, blog post body text typography, etc.
 
-For example if we now decide that the `.navigationarea` treatment in our `module/pageheader.scss` module above has some reuse elsewhere in our project (e.g. we now want navigation repeated in the footer) we then create a `component/navigationarea.scss` file:
+For example if we now decide that the `.navigationarea` treatment in our `module/pageheader.scss` module above has some reuse elsewhere in our project (e.g. we decide to have navigation look/feel repeated in the footer) we create a `component/navigationarea.scss` component file:
 
 ```scss
 $cNavigationArea_width: 60px;
@@ -129,7 +129,7 @@ $cNavigationArea_width: 60px;
 }
 ```
 
-...and then update `module/pageheader.scss` to:
+...and then update our existing `module/pageheader.scss` to:
 
 ```scss
 // -- header frame --
@@ -148,6 +148,8 @@ $cNavigationArea_width: 60px;
 	}
 }
 ```
+
+.. and finally a new `module/pagefooter.scss` could then `@extend` those same placeholder classes.
 
 Key points:
 - Variables and placeholder selectors are named in a consistent format of `$cComponentName_variableName` / `%cComponentName_placeholderName`.
