@@ -279,7 +279,8 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 				// validate naming for a component/module placeholder
 				if (isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_MODULE)) {
-					// components can have placeholders which are just the name - check first if this format matches
+					// component placeholders can be named just that of the source file - check if this format matches
+					// e.g. "%cCOMPONENTNAME", rather than "%cCOMPONENTNAME_subName"
 					var isSimpleComponentPlaceholder;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
@@ -292,6 +293,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 					}
 
 					if (!isSimpleComponentPlaceholder) {
+						// not a simple component placeholder - expecting "%cCOMPONENTNAME_subName" format
 						// after underscore, first character must be lowercase
 						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:. {]/.test(lineText)) return false;
 
@@ -310,7 +312,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				// class name should be all lower case letters, digits and dashes only
 				if (!/^\.[a-z0-9][a-z0-9-]*[a-z0-9][,:. {]/.test(lineText)) return false;
 
-				// validate naming for class name
+				// validate naming for class
 				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[,:.\\- {]');
 				if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
 
@@ -482,4 +484,6 @@ var readdirRecurse = function(startDir,extension,callback) {
 			processResultList(scanDir,resultList);
 		}
 	});
+
+	// TODO: add routine(s) to find placeholders that are not used, or used only once and report
 })();
