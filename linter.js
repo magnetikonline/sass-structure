@@ -281,19 +281,19 @@ var readdirRecurse = function(startDir,extension,callback) {
 				if (isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_MODULE)) {
 					// component placeholders can be named just that of the source file - check if this format matches
 					// e.g. "%cCOMPONENTNAME", rather than "%cCOMPONENTNAME_subName"
-					var isSimpleComponentPlaceholder;
+					var isSimple;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
 						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[,:. {]');
 						if (namespaceFormatRegexp.test(lineText.toLowerCase())) {
-							// yes this is a simple component placeholder - ensure first character after '%c' is a letter and uppercase
-							isSimpleComponentPlaceholder = true;
+							// yes this is a simple placeholder - ensure first character after '%c' is a letter and uppercase
+							isSimple = true;
 							if (!/^%c[A-Z]/.test(lineText)) return false;
 						}
 					}
 
-					if (!isSimpleComponentPlaceholder) {
-						// not a simple component placeholder - expecting "%cCOMPONENTNAME_subName" format
+					if (!isSimple) {
+						// not a simple placeholder - expecting "%cCOMPONENTNAME_subName" format
 						// after underscore, first character must be lowercase
 						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:. {]/.test(lineText)) return false;
 
