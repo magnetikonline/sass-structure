@@ -229,13 +229,23 @@ var readdirRecurse = function(startDir,extension,callback) {
 				lintResultCollection[sourceFile].push([lineNumber + 1,errorText]);
 			}
 
+			function lintVariablePlaceHolderPrefixChars(firstChar,lineText) {
+
+				// check prefix character based on file role
+				var secondChar = false;
+				if (sourceFileRole == FILE_ROLE_COMPONENT) secondChar = 'c';
+				if (sourceFileRole == FILE_ROLE_LAYOUT) secondChar = 'l';
+				if (sourceFileRole == FILE_ROLE_MODULE) secondChar = 'm';
+
+				return (secondChar === false)
+					? true
+					: (lineText.substr(0,2) == (firstChar + secondChar));
+			}
+
 			function lintVariable(lineText) {
 
 				// check prefix character based on file role
-				var firstTwoChars = lineText.substr(0,2);
-				if ((sourceFileRole == FILE_ROLE_COMPONENT) && (firstTwoChars != '$c')) return false;
-				if ((sourceFileRole == FILE_ROLE_LAYOUT) && (firstTwoChars != '$l')) return false;
-				if ((sourceFileRole == FILE_ROLE_MODULE) && (firstTwoChars != '$m')) return false;
+				if (!lintVariablePlaceHolderPrefixChars('$',lineText)) return false;
 
 				// validate naming for a config.scss variable
 				if (
@@ -266,10 +276,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 			function lintPlaceHolder(lineText) {
 
 				// check prefix character based on file role
-				var firstTwoChars = lineText.substr(0,2);
-				if ((sourceFileRole == FILE_ROLE_COMPONENT) && (firstTwoChars != '%c')) return false;
-				if ((sourceFileRole == FILE_ROLE_LAYOUT) && (firstTwoChars != '%l')) return false;
-				if ((sourceFileRole == FILE_ROLE_MODULE) && (firstTwoChars != '%m')) return false;
+				if (!lintVariablePlaceHolderPrefixChars('%',lineText)) return false;
 
 				// validate naming for a layout placeholder
 				if (
