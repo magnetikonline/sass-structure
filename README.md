@@ -18,23 +18,23 @@ In addition I have included a [Sass Linter utility](#sass-linter) written in Nod
 - [Sass Linter](#sass-linter)
 
 ## Core aims
-- Leverage techniques to write documents with a [DRY](http://en.wikipedia.org/wiki/Don't_repeat_yourself) approach and encourage reuse wherever feasible.
-- With everything defined in Sass being essentially global (such as [variables](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#variables_) and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_)) enforce a strong namespacing convention to avoid clobbering/clashes between what should be isolated sections of code.
-- Split out styling definitions into logical groupings - aiming for lower lines-of-code over multiple files rather than all-in-one monster documents.
+- Leverage techniques to write documents with a [DRY](http://en.wikipedia.org/wiki/Don't_repeat_yourself) approach and encourage style reuse wherever possible.
+- With everything in Sass being essentially global (such as [variables](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#variables_) and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_)) enforce a strong namespacing convention to avoid clobbering between what should be isolated sections of styling/code.
+- Split out style definitions into logical groupings - aiming for lower lines-of-code over multiple files rather than all-in-one monster documents.
 
 ## File roles
 What follows is each of the Sass file *roles* employed, their purpose and hierarchical location within a project.
 
 ### Config
-A single config file located at [[sassroot]/config.scss](example/config.scss) provides variables for all *global* project values and settings. The file contains **only** variable definitions, nothing else. Think of them a project constants.
+A single config file located at [[sassroot]/config.scss](example/config.scss) provides variables for all *global* project values and settings. The file contains **only** variable definitions, nothing else. Think of them as a projects constants.
 
-Examples of configuration kept here:
+Examples of configuration items:
 - Font families, font sizes, line heights
 - Responsive layout breakpoints
 - Spacings, margins, padding
 - Color definitions
 
-I personally rely on configuration variables for everything possible, it not only works to keep things consistent across a project (what was the hex code for the company branded red again?) it helps me refactor and reduce excessive variations of a style item during development (do we really need 12 font sizes/16 shades of blue across the site?).
+I personally rely on configuration variables whenever possible - not only helps keep consistency across a project (what was the `rgba()` code for the company branded red again?) it helps me refactor and reduce excessive variations of style items (e.g. do we really need those 12 font sizes and 16 shades of blue across the site?).
 
 Naming for variables is always `$camelCased` and avoids any of the variable prefixing used for modules, components and layouts.
 
@@ -65,6 +65,18 @@ $mPageHeader_iconSize: 10px;
 	border: 3px solid $colorBrown;
 }
 
+function mPageHeader_calcWidth() {
+
+	// pointless example
+	@return 60px;
+}
+
+@mixin mPageHeader_addWhiteSpaceAndAlign() {
+	// again, pointless
+	text-align: center;
+	white-space: nowrap;
+}
+
 
 // -- header frame --
 .pageheader {
@@ -75,15 +87,14 @@ $mPageHeader_iconSize: 10px;
 	> .navigationarea {
 		background: $colorOrange;
 		height: 20px;
-		width: 60px;
+		width: mPageHeader_calcWidth();
 	}
 }
 
 // -- navigation item --
 .pageheader-navigationitem {
+	@include mPageHeader_addWhiteSpaceAndAlign();
 	font-size: $fontSizeMedium;
-	text-align: center;
-	white-space: nowrap;
 	width: 30%;
 
 	// icon treatment
@@ -99,9 +110,10 @@ $mPageHeader_iconSize: 10px;
 The key things to note here are:
 - Heavy use of variables, which would be defined in the projects [config](#config) file.
 - All base class names have a prefix matching that of the module/scss filename (`.pageheader` and `.pageheader-navigationitem`), using a single dash for namespacing of sub-classes within the module.
-- Using [child combinator](http://css-tricks.com/child-and-sibling-selectors/) selectors where possible to control targeting of styles. I typically never go deeper than three levels of nesting to keep things flatter and reduce complex CSS rule chains, hence why the styles for `.pageheader-navigationitem` are their own base class name rather than defined under `.navigationarea`.
-- Comments using C style syntax (won't be outputted to generated CSS). Base level comments are written as `// -- module item name --` since I find the dashes help with visual separation.
-- Variables and placeholder selectors that are used solely within this module are named in a consistent format of `$mModuleName_variableName` to avoid clashes with other parts of the Sass project.
+- Using [child combinator](http://css-tricks.com/child-and-sibling-selectors/) selectors where possible to control targeting of styles. I typically never go deeper than three levels of nesting to keep things flatter and reduce complex CSS rule chains, hence why the styles for `.pageheader-navigationitem` are their own base class name, rather than defined under `.navigationarea`.
+- All comments using C style syntax (won't be outputted to generated CSS).
+- Base level comments written as `// -- module item name --` - I find the dashes help with visual separation.
+- Variables, placeholder selectors, function and mixins that are used solely within this module are named in a consistent form of `$mModuleName_variableName` to avoid clashes with other parts of the project.
 
 ### Components
 Sass styles that are shared across multiple [modules](#modules) are defined in a [[sassroot]/component](example/component) file, using the `@extend` directive and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_) which by design encourage style reuse without repeating styling blocks.
@@ -152,7 +164,7 @@ $cNavigationArea_width: 60px;
 .. and finally a new `module/pagefooter.scss` could then `@extend` those same placeholder classes.
 
 Key points:
-- Variables and placeholder selectors are named in a consistent format of `$cComponentName_variableName` / `%cComponentName_placeholderName`.
+- As with [modules](#modules) above - variables, placeholder selectors, function and mixins named in a consistent form of `$cComponentName_variableName` / `%cComponentName_placeholderName` / etc..
 - A component file *does not* emit CSS, it **only** defines placeholder selectors.
 
 ### Layout
@@ -197,8 +209,8 @@ $lAnotherVariableForLayoutUseOnly: 20em;
 ```
 
 Key points:
-- Variables and placeholder selectors are named in a consistent format of `$lVariableName` / `%lPlaceholderName`.
-- The `layout.scss` file *does not* emit any CSS of it's own, **only** define placeholder selectors for use within [modules](#modules).
+- Variables, placeholder selectors, function and mixins named in a consistent form of `$lVariableName` / `%lPlaceholderName`.
+- As with [components](#components), the `layout.scss` file *does not* emit any CSS of it's own, **only** define placeholder selectors for use within [modules](#modules) and (possibly) components.
 
 ### Mixins
 Any additional mixins required for the project are defined in [[sassroot]/mixin.scss](example/mixin.scss). No real enforcement of naming conventions here and I aim to limit their use - instead trying to use placeholder selectors within [components](#components) whenever possible.
