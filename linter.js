@@ -161,7 +161,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 			if (sourceFile == ('mixin.' + SCSS_EXTENSION)) return FILE_ROLE_MIXIN;
 			if (sourceFile == ('style.' + SCSS_EXTENSION)) return FILE_ROLE_STYLE;
 
-			// skip file - can't lint
+			// unable to determine file role
 			return false;
 		}
 
@@ -169,15 +169,17 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 			function complete() {
 
-				if (!processQueueCount) {
+				if (processQueueCount < 1) {
 					// processing queue is done - display results
-					renderResults(resultList.length,lintFileCount,lintResultCollection);
+					renderResults(
+						resultList.length,lintFileCount,
+						lintResultCollection
+					);
 				}
 			}
 
-			processQueueCount++;
-
 			// open file read only
+			processQueueCount++;
 			var fullFilePath = baseDir + '/' + sourceFile;
 
 			fs.readFile(
@@ -229,23 +231,25 @@ var readdirRecurse = function(startDir,extension,callback) {
 				lintResultCollection[sourceFile].push([lineNumber + 1,errorText]);
 			}
 
-			function lintVariablePlaceHolderPrefixChars(firstChar,lineText) {
+			function lintPrefixChars(firstChar,lineText) {
 
-				// check prefix character based on file role
-				var secondChar = false;
+				var secondChar = false,
+					subStrCount = (firstChar === false) ? 1 : 2;
+
+				// set prefix character check based on file role
 				if (sourceFileRole == FILE_ROLE_COMPONENT) secondChar = 'c';
 				if (sourceFileRole == FILE_ROLE_LAYOUT) secondChar = 'l';
 				if (sourceFileRole == FILE_ROLE_MODULE) secondChar = 'm';
 
 				return (secondChar === false)
-					? true
-					: (lineText.substr(0,2) == (firstChar + secondChar));
+					? true // variable/placeholder is in a file role we don't need to worry about
+					: (lineText.substr(0,subStrCount) == (((firstChar === false) ? '' : firstChar) + secondChar));
 			}
 
 			function lintVariable(lineText) {
 
 				// check prefix character based on file role
-				if (!lintVariablePlaceHolderPrefixChars('$',lineText)) return false;
+				if (!lintPrefixChars('$',lineText)) return false;
 
 				// validate naming for a config.scss variable
 				if (
@@ -265,8 +269,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 					if (!/^\$[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+:/.test(lineText)) return false;
 
 					// ensure prefix namespace for variable matches source file base name
-					var namespaceFormatRegexp = RegExp('^\\$[cm]' + sourceFileBaseName + '_');
-					if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
+					if (!RegExp('^\\$[cm]' + sourceFileBaseName + '_').test(lineText.toLowerCase())) return false;
 				}
 
 				// all valid
@@ -276,7 +279,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 			function lintPlaceHolder(lineText) {
 
 				// check prefix character based on file role
-				if (!lintVariablePlaceHolderPrefixChars('%',lineText)) return false;
+				if (!lintPrefixChars('%',lineText)) return false;
 
 				// validate naming for a layout placeholder
 				if (
@@ -291,8 +294,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 					var isSimple;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
-						var namespaceFormatRegexp = RegExp('^%c' + sourceFileBaseName + '[,:. {]');
-						if (namespaceFormatRegexp.test(lineText.toLowerCase())) {
+						if (RegExp('^%c' + sourceFileBaseName + '[,:. {]').test(lineText.toLowerCase())) {
 							// yes this is a simple placeholder - ensure first character after '%c' is a letter and uppercase
 							isSimple = true;
 							if (!/^%c[A-Z]/.test(lineText)) return false;
@@ -305,8 +307,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:. {]/.test(lineText)) return false;
 
 						// ensure prefix namespace for placeholder matches source file base name
-						var namespaceFormatRegexp = RegExp('^%[cm]' + sourceFileBaseName + '_');
-						if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
+						if (!RegExp('^%[cm]' + sourceFileBaseName + '_').test(lineText.toLowerCase())) return false;
 					}
 				}
 
@@ -314,14 +315,42 @@ var readdirRecurse = function(startDir,extension,callback) {
 				return true;
 			}
 
-			function lintClassName(lineText) {
+			function lintSassFunctionMixin(checkType,lineText) {
+
+				// extract name
+				var checkName = RegExp('^@' + checkType + ' +([^\( ]+)').exec(lineText);
+				if (!checkName) return false;
+
+				// check function prefix character based on file role
+				checkName = checkName[1];
+				if (!lintPrefixChars(false,checkName)) return false;
+
+				// validate naming for a layout function
+				if (
+					(sourceFileRole == FILE_ROLE_LAYOUT) &&
+					(!/^l[A-Z][A-Za-z0-9]+$/.test(checkName))
+				) return false;
+
+				// validate naming for a component/module function
+				if (isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_MODULE)) {
+					// after underscore, first character must be lowercase
+					if (!/^[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+$/.test(checkName)) return false;
+
+					// ensure prefix namespace for function matches source file base name
+					if (!RegExp('^[cm]' + sourceFileBaseName + '_').test(checkName.toLowerCase())) return false;
+				}
+
+				// all valid
+				return true;
+			}
+
+			function lintClass(lineText) {
 
 				// class name should be all lower case letters, digits and dashes only
 				if (!/^\.[a-z0-9][a-z0-9-]*[a-z0-9][,:. {]/.test(lineText)) return false;
 
 				// validate naming for class
-				var namespaceFormatRegexp = RegExp('^\.' + sourceFileBaseName + '[,:.\\- {]');
-				if (!namespaceFormatRegexp.test(lineText.toLowerCase())) return false;
+				if (!RegExp('^\.' + sourceFileBaseName + '[,:.\\- {]').test(lineText.toLowerCase())) return false;
 
 				// all valid
 				return true;
@@ -356,7 +385,6 @@ var readdirRecurse = function(startDir,extension,callback) {
 				}
 
 				// variables
-				// TODO: need to still handle mixin variable naming checks
 				if (/^\$/.test(lineTextTrim)) {
 					if (sourceFileRole == FILE_ROLE_STYLE) {
 						// no variables in style.scss file allowed
@@ -383,15 +411,43 @@ var readdirRecurse = function(startDir,extension,callback) {
 					}
 				}
 
+				// functions
+				if (/^@function /.test(lineTextTrim)) {
+					if (isFileRoleIn(FILE_ROLE_CONFIG,FILE_ROLE_STYLE)) {
+						// no Sass functions should be here
+						addLintError(lineNumber,'Sass functions should not be used here');
+
+					} else {
+						// Sass functions allowed - check format
+						if (!lintSassFunctionMixin('function',lineTextTrim)) {
+							addLintError(lineNumber,'Invalid Sass function name');
+						}
+					}
+				}
+
+				// mixins
+				if (/^@mixin /.test(lineTextTrim)) {
+					if (isFileRoleIn(FILE_ROLE_CONFIG,FILE_ROLE_STYLE)) {
+						// no mixins should be here
+						addLintError(lineNumber,'Mixins should not be used here');
+
+					} else {
+						// mixins allowed - check format
+						if (!lintSassFunctionMixin('mixin',lineTextTrim)) {
+							addLintError(lineNumber,'Invalid mixin name');
+						}
+					}
+				}
+
 				// classes
-				if (/^\./.test(lineText)) {
+				if (/^\./.test(lineTextTrim)) {
 					if (sourceFileRole != FILE_ROLE_MODULE) {
 						// no class selectors should be here
 						addLintError(lineNumber,'Class selectors should not be used here');
 
 					} else {
 						// class selectors allowed - check format
-						if (!lintClassName(lineText)) {
+						if (!lintClass(lineText)) {
 							addLintError(lineNumber,'Invalid class selector name');
 						}
 					}

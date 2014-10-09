@@ -164,7 +164,7 @@ $cNavigationArea_width: 60px;
 .. and finally a new `module/pagefooter.scss` could then `@extend` those same placeholder classes.
 
 Key points:
-- As with [modules](#modules) above - variables, placeholder selectors, function and mixins named in a consistent form of `$cComponentName_variableName` / `%cComponentName_placeholderName` / etc..
+- As with [modules](#modules) above - variables, placeholder selectors, function and mixins named in a consistent form of `$cComponentName_variableName` / `%cComponentName_placeholderName` / etc.
 - A component file *does not* emit CSS, it **only** defines placeholder selectors.
 
 ### Layout
