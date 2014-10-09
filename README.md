@@ -228,7 +228,7 @@ The order of includes is typically as follows - it's somewhat important to suppo
 - Components
 - Modules
 
-To simplify the inclusion of component and module files I make use of the [Sass Globbing Plugin](https://github.com/chriseppstein/sass-globbing), something I wish would be included as part of the Sass core. This allows syntax like the following in `style.scss`:
+To simplify the inclusion of component and module files I make use of the [Sass Globbing Plugin](https://github.com/chriseppstein/sass-globbing), which allows for wildcards with `@import` statements. Thus the final `style.scss` can be as simple as:
 
 ```scss
 // resetbase / font / layout
