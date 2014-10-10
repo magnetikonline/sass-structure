@@ -385,7 +385,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 				}
 
 				// variables
-				if (/^\$/.test(lineTextTrim)) {
+				if (/^\$[^ ]+:/.test(lineTextTrim)) {
 					if (sourceFileRole == FILE_ROLE_STYLE) {
 						// no variables in style.scss file allowed
 						addLintError(lineNumber,'Variables should not be defined here, use config.scss file');
