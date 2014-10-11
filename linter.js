@@ -447,7 +447,7 @@ var readdirRecurse = function(startDir,extension,callback) {
 
 					} else {
 						// class selectors allowed - check format
-						if (!lintClass(lineText)) {
+						if (!lintClass(lineTextTrim)) {
 							addLintError(lineNumber,'Invalid class selector name');
 						}
 					}
