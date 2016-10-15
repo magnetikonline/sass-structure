@@ -338,7 +338,7 @@ function readdirRecurse(startDir,extension,callback) {
 				if (!/^\.[a-z0-9][a-z0-9-]*[a-z0-9][,:. {]/.test(lineText)) return false;
 
 				// validate naming for class
-				if (!RegExp(`^\.${sourceFileBaseName}[,:.\\- {]`).test(lineText.toLowerCase())) return false;
+				if (!RegExp(`^\\.${sourceFileBaseName}[,:.\\- {]`).test(lineText.toLowerCase())) return false;
 
 				// all valid
 				return true;
