@@ -26,7 +26,7 @@ In addition I have included a [Sass Linter utility](#sass-linter) written in Nod
 What follows is each of the Sass file *roles* employed, their purpose and hierarchical location within a project.
 
 ### Config
-A single config file located at [[sassroot]/config.scss](example/config.scss) provides variables for all *global* project values and settings. The file contains **only** variable definitions, nothing else. Think of them as a projects constants.
+A single config file located at [`[sassroot]/config.scss`](example/config.scss) provides variables for all *global* project values and settings. The file contains **only** variable definitions, nothing else. Think of them as a projects constants.
 
 Examples of configuration items:
 - Font families, font sizes, line heights
@@ -116,11 +116,15 @@ The key things to note here are:
 - Variables, placeholder selectors, function and mixins that are used solely within this module are named in a consistent form of `$mModuleName_variableName` to avoid clashes with other parts of the project.
 
 ### Components
-Sass styles that are shared across multiple [modules](#modules) are defined in a [[sassroot]/component](example/component) file, using the `@extend` directive and [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_) which by design encourage style reuse without repeating styling blocks.
+Sass styles that are shared across multiple [modules](#modules) are defined in a [[sassroot]/component](example/component) file, using `@extend` directives combined with [placeholder selectors](http://sass-lang.com/documentation/file.SASS_REFERENCE.html#placeholder_selectors_), which by design encourage reuse without repeating style blocks.
 
-They could be your feature box border/shadow treatments, button styles, heading treatments, blog post body text typography, etc.
+They could be items such as:
+- Feature box border/shadow treatments
+- Button styles
+- Heading treatments
+- Blog post body text typography
 
-For example if we now decide that the `.navigationarea` treatment in our `module/pageheader.scss` module above has some reuse elsewhere in our project (e.g. we decide to have navigation look/feel repeated in the footer) we create a `component/navigationarea.scss` component file:
+For example if we now decide that the `.navigationarea` treatment in the `module/pageheader.scss` module has reuse elsewhere in our project (e.g. we decide to have navigation look/feel repeated in the footer) we could create a `component/navigationarea.scss` component file of:
 
 ```scss
 $cNavigationArea_width: 60px;
@@ -141,7 +145,7 @@ $cNavigationArea_width: 60px;
 }
 ```
 
-...and then update our existing `module/pageheader.scss` to:
+...and then update our existing `module/pageheader.scss` module to:
 
 ```scss
 // -- header frame --
@@ -168,7 +172,7 @@ Key points:
 - A component file *does not* emit CSS, it **only** defines placeholder selectors.
 
 ### Layout
-The [[sassroot]/layout.scss](example/layout.scss) file defines the projects grid - generally things such as column spans in traditional grid systems, main/sidebar area grids and responsive page frames. A layout area is typically a containment for [modules](#modules) and typically does not involve itself with visual elements such as color or typography.
+The [`[sassroot]/layout.scss`](example/layout.scss) file defines the projects grid - generally things such as column spans in traditional grid systems, main/sidebar area grids and responsive page frames. A layout area is typically a containment for [modules](#modules) and typically does not involve itself with visual elements such as color or typography.
 
 Again loosely based around the SMACSS concept of [layout rules](http://smacss.com/book/type-layout), and will **only** contain placeholder selectors which are then applied to [module](#modules) classes.
 
@@ -213,12 +217,12 @@ Key points:
 - As with [components](#components), the `layout.scss` file *does not* emit any CSS of it's own, **only** define placeholder selectors for use within [modules](#modules) and (possibly) components.
 
 ### Mixins
-Any additional mixins required for the project are defined in [[sassroot]/mixin.scss](example/mixin.scss). No real enforcement of naming conventions here and I aim to limit their use - instead trying to use placeholder selectors within [components](#components) whenever possible.
+Any additional mixins required for the project are defined in [`[sassroot]/mixin.scss`](example/mixin.scss). No real enforcement of naming conventions here and I aim to limit their use - instead trying to use placeholder selectors within [components](#components) whenever possible.
 
 ### Style
-Finally, the [[sassroot]/style.scss](example/style.scss) file brings everything above together via `@import` statements and will generate the resulting CSS output document. Style itself **will not** define any variables, placeholders, mixins or CSS class definitions.
+Finally [`[sassroot]/style.scss`](example/style.scss) brings everything above together via a series of `@import` statements to generate the resulting CSS output - it **will not** define any variables, placeholders, mixins or CSS class definitions of its own.
 
-The order of includes is typically as follows - it's somewhat important to support how placeholders and `@extend` work together:
+The order of includes is as follows - somewhat important to support how placeholders and `@extend` work together:
 - Config
 - Mixins
 - CSS reset (the first actual output of CSS)
