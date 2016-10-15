@@ -6,8 +6,8 @@ let fs = require('fs'),
 
 function readdirRecurse(startDir,extension,callback) {
 
-	let basePathRemoveRegExp = RegExp('^' + path.resolve(startDir) + '/'),
-		extensionMatchRegExp = RegExp('\\.' + extension + '$'),
+	let basePathRemoveRegExp = RegExp(`^${path.resolve(startDir)}/`),
+		extensionMatchRegExp = RegExp(`\\.${extension}$`),
 		resultList = [],
 		queueCount = 1, // start at 1 to account for initial call to fetch()
 		isFinished;
@@ -205,15 +205,7 @@ function readdirRecurse(startDir,extension,callback) {
 
 			function isFileRoleIn() {
 
-				for (let index = arguments.length - 1;index >= 0;index--) {
-					if (arguments[index] == sourceFileRole) {
-						// found match
-						return true;
-					}
-				}
-
-				// no match
-				return false;
+				return (Array.from(arguments).indexOf(sourceFileRole) >= 0);
 			}
 
 			function addLintError(lineNumber,errorText) {
@@ -265,7 +257,7 @@ function readdirRecurse(startDir,extension,callback) {
 					if (!/^\$[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+:/.test(lineText)) return false;
 
 					// ensure prefix namespace for variable matches source file base name
-					if (!RegExp('^\\$[cm]' + sourceFileBaseName + '_').test(lineText.toLowerCase())) return false;
+					if (!RegExp(`^\\$[cm]${sourceFileBaseName}_`).test(lineText.toLowerCase())) return false;
 				}
 
 				// all valid
@@ -290,7 +282,7 @@ function readdirRecurse(startDir,extension,callback) {
 					let isSimple;
 
 					if (sourceFileRole == FILE_ROLE_COMPONENT) {
-						if (RegExp('^%c' + sourceFileBaseName + '[,:. {]').test(lineText.toLowerCase())) {
+						if (RegExp(`^%c${sourceFileBaseName}[,:. {]`).test(lineText.toLowerCase())) {
 							// yes this is a simple placeholder - ensure first character after '%c' is a letter and uppercase
 							isSimple = true;
 							if (!/^%c[A-Z]/.test(lineText)) return false;
@@ -303,7 +295,7 @@ function readdirRecurse(startDir,extension,callback) {
 						if (!/^%[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+[,:. {]/.test(lineText)) return false;
 
 						// ensure prefix namespace for placeholder matches source file base name
-						if (!RegExp('^%[cm]' + sourceFileBaseName + '_').test(lineText.toLowerCase())) return false;
+						if (!RegExp(`^%[cm]${sourceFileBaseName}_`).test(lineText.toLowerCase())) return false;
 					}
 				}
 
@@ -314,7 +306,7 @@ function readdirRecurse(startDir,extension,callback) {
 			function lintSassFunctionMixin(checkType,lineText) {
 
 				// extract name
-				let checkName = RegExp('^@' + checkType + ' +([^\( ]+)').exec(lineText);
+				let checkName = RegExp(`^@${checkType} +([^\( ]+)`).exec(lineText);
 				if (!checkName) return false;
 
 				// check function prefix character based on file role
@@ -333,7 +325,7 @@ function readdirRecurse(startDir,extension,callback) {
 					if (!/^[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+$/.test(checkName)) return false;
 
 					// ensure prefix namespace for function matches source file base name
-					if (!RegExp('^[cm]' + sourceFileBaseName + '_').test(checkName.toLowerCase())) return false;
+					if (!RegExp(`^[cm]${sourceFileBaseName}_`).test(checkName.toLowerCase())) return false;
 				}
 
 				// all valid
@@ -346,7 +338,7 @@ function readdirRecurse(startDir,extension,callback) {
 				if (!/^\.[a-z0-9][a-z0-9-]*[a-z0-9][,:. {]/.test(lineText)) return false;
 
 				// validate naming for class
-				if (!RegExp('^\.' + sourceFileBaseName + '[,:.\\- {]').test(lineText.toLowerCase())) return false;
+				if (!RegExp(`^\.${sourceFileBaseName}[,:.\\- {]`).test(lineText.toLowerCase())) return false;
 
 				// all valid
 				return true;
@@ -355,7 +347,7 @@ function readdirRecurse(startDir,extension,callback) {
 			// build base name from the source file name (minus a possible leading underscore) used for namespacing checks
 			sourceFileBaseName = path.basename(sourceFile,'.' + SCSS_EXTENSION).toLowerCase();
 			sourceFileBaseName = sourceFileBaseName.replace(/^_/,'');
-			console.log('File:',sourceFile);
+			console.log(`File: ${sourceFile}`);
 
 			// work over each file line looking for linting errors
 			fileData.split(LINE_SEPARATOR_REGEXP).forEach((lineText,lineNumber) => {
@@ -473,7 +465,7 @@ function readdirRecurse(startDir,extension,callback) {
 			let fileCount = 0,
 				errorCount = 0;
 
-			for (let fileName in lintResultCollection) {
+			for (let fileName of Object.keys(lintResultCollection)) {
 				fileCount++;
 				errorCount += lintResultCollection[fileName].length;
 			}
@@ -483,7 +475,7 @@ function readdirRecurse(startDir,extension,callback) {
 
 		function renderErrorDetails() {
 
-			for (let fileName in lintResultCollection) {
+			for (let fileName of Object.keys(lintResultCollection)) {
 				console.log(`${fileName}:`);
 
 				lintResultCollection[fileName].forEach((errorItem) => {
