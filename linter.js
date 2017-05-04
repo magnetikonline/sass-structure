@@ -4,83 +4,94 @@ let fs = require('fs'),
 	path = require('path');
 
 
-function readdirRecurse(startDir,extension,callback) {
+function readDirRecursive(startDir,extension) {
 
-	let basePathRemoveRegExp = RegExp(`^${path.resolve(startDir)}/`),
-		extensionMatchRegExp = RegExp(`\\.${extension}$`),
-		resultList = [],
-		queueCount = 1, // start at 1 to account for initial call to fetch()
-		isFinished;
+	let extensionMatchRegExp = RegExp(`\\.${extension}$`),
+		basePathRemoveRegExp = RegExp(`^${path.resolve(startDir)}/`),
+		readDirQueue = [],
+		fileList = [];
 
-	function fetch(dir) {
+	function readDir(dir) {
 
-		fs.readdir(dir,(err,list) => {
+		function getItemList(readDir) {
 
-			if (err) {
-				// error
-				return finish([]);
-			}
+			return new Promise((resolve,reject) => {
 
-			queueCount--; // drop by 1 for initial/recursive call to fetch()
-			queueCount += list.length;
-
-			if (!queueCount) {
-				// everything processed
-				return finish();
-			}
-
-			list.forEach((sourceFile) => {
-
-				// resolve full path to file, stat for file or directory
-				sourceFile = path.resolve(dir,sourceFile);
-				fs.stat(sourceFile,(err,stat) => {
+				fs.readdir(readDir,(err,itemList) => {
 
 					if (err) {
-						// error
-						return finish([]);
+						return reject();
 					}
 
-					queueCount--;
-					if (stat && stat.isDirectory()) {
-						// recurse into directory, increment queueCount (decremented on callback from fs.readdir())
-						queueCount++;
-						return fetch(sourceFile);
-					}
-
-					if (extensionMatchRegExp.test(sourceFile)) {
-						// file item matches extension, add to resultList stack
-						resultList.push(sourceFile.replace(basePathRemoveRegExp,''));
-					}
-
-					if (!queueCount) {
-						// everything processed
-						return finish();
-					}
+					// resolve with parent path added to each item
+					resolve(itemList.map((item) => path.resolve(readDir,item)));
 				});
 			});
-		});
+		}
+
+		function getItemListStat(itemList) {
+
+			function getStat(itemPath) {
+
+				return new Promise((resolve,reject) => {
+
+					fs.stat(itemPath,(err,stat) => {
+
+						if (err) {
+							return reject();
+						}
+
+						// resolve with item path and if directory
+						resolve({
+							itemPath,
+							isDirectory: stat.isDirectory()
+						});
+					});
+				});
+			}
+
+			// stat all items in list
+			return Promise.all(itemList.map(getStat));
+		}
+
+		function processItemList(itemList) {
+
+			for (let {itemPath,isDirectory} of itemList) {
+				if (isDirectory) {
+					// add directory to queue
+					readDirQueue.push(itemPath);
+					continue;
+				}
+
+				if (extensionMatchRegExp.test(itemPath)) {
+					// add file to list
+					fileList.push(itemPath.replace(basePathRemoveRegExp,''));
+				}
+			}
+
+			// if queue remaining, process directory recursive
+			if (readDirQueue.length > 0) {
+				return readDir(readDirQueue.shift());
+			}
+
+			// finished - sort and return file list
+			return fileList.sort((a,b) => {
+
+				if (a > b) return 1;
+				if (a < b) return -1;
+				return 0;
+			});
+		}
+
+		// read directory list, stat each item and process result
+		return getItemList(dir)
+			.then(getItemListStat)
+			.then(processItemList);
 	}
 
-	function finish(list) {
-
-		// if already called finish(), no work
-		if (isFinished) return;
-		isFinished = true;
-
-		// sort result list and pass to callback
-		resultList = (list === undefined) ? resultList : list;
-		callback(resultList.sort((a,b) => {
-
-			if (a > b) return 1;
-			if (a < b) return -1;
-			return 0;
-		}));
-	}
-
-	// start working over dir
-	fetch(startDir);
+	// commence reading at the top
+	return readDir(startDir);
 }
-
 
 {
 	let SCSS_EXTENSION = 'scss',
@@ -102,52 +113,42 @@ function readdirRecurse(startDir,extension,callback) {
 
 	function getScanDir() {
 
-		function reportDirError() {
+		return new Promise((resolve,reject) => {
 
-			logError('SCSS scan directory given does not exist and/or is not a directory');
-			return false;
-		}
+			let argvCount = process.argv.length;
+			if (argvCount > 3) {
+				// invalid argument count
+				logError('Invalid arguments given');
+				console.log(`\nUsage: ${process.argv[0]} ${path.basename(process.argv[1])} [SCSS scan dir]`);
 
-		let argvCount = process.argv.length,
-			scanDir = path.resolve('.'); // default scan dir if not given
+				return reject();
+			}
 
-		if (argvCount > 3) {
-			// invalid argument count
-			logError('Invalid arguments given');
-			console.log(`\nUsage: ${process.argv[0]} ${path.basename(process.argv[1])} [SCSS scan dir]`);
+			// if scan dir given, override default of current path
+			let scanDir = (argvCount == 3)
+				? path.resolve(process.argv[2])
+				: path.resolve('.');
 
-			return false;
-		}
+			// validate scan dir exists
+			fs.stat(scanDir,(err,stat) => {
 
-		if (argvCount == 3) {
-			// scan dir given
-			scanDir = path.resolve(process.argv[2]);
-		}
+				// if stat error or path is not a directory, reject
+				if (err || !stat.isDirectory()) {
+					logError(`SCSS scan directory of ${scanDir} does not exist or is not a directory`);
+					return reject();
+				}
 
-		// validate scan dir exists
-		let stat;
-		try {
-			stat = fs.statSync(scanDir);
-
-		} catch(e) {
-			// unable to stat scanDir
-			return reportDirError();
-		}
-
-		if (stat && stat.isDirectory()) {
-			// all valid
-			return scanDir;
-		}
-
-		// error with given directory
-		return reportDirError();
+				// resolve with scanDir
+				resolve(scanDir);
+			});
+		});
 	}
 
 	function processResultList(baseDir,resultList) {
 
-		let processQueueCount = 0,
-			lintFileCount = 0,
-			lintResultCollection = {};
+		let lintFileCount = 0,
+			lintErrorCollection = {},
+			processQueue = Promise.resolve();
 
 		function getFileRole(sourceFile) {
 
@@ -162,61 +163,44 @@ function readdirRecurse(startDir,extension,callback) {
 			return false;
 		}
 
-		function openSourceFile(sourceFile,sourceFileRole) {
+		function loadFile(filePath) {
 
-			function complete() {
+			return new Promise((resolve,reject) => {
 
-				if (processQueueCount < 1) {
-					// processing queue is done - display results
-					renderResults(
-						resultList.length,lintFileCount,
-						lintResultCollection
-					);
-				}
-			}
+				fs.readFile(
+					filePath,FILE_ENCODING,
+					(err,fileData) => {
 
-			// open file read only
-			processQueueCount++;
-			let fullFilePath = `${baseDir}/${sourceFile}`;
+						if (err) {
+							// unable to open file for reading
+							logError(`Unable to load ${filePath} for reading`);
+							return reject();
+						}
 
-			fs.readFile(
-				fullFilePath,FILE_ENCODING,
-				(err,fileData) => {
-
-					processQueueCount--;
-
-					if (err) {
-						// unable to open file for reading - skip
-						logError(`Unable to open ${fullFilePath} for reading`);
-						return complete();
+						// resolve with loaded file data
+						lintFileCount++;
+						resolve(fileData);
 					}
-
-					lintFile(sourceFile,sourceFileRole,fileData);
-					lintFileCount++;
-
-					return complete();
-				}
-			);
+				);
+			});
 		}
 
-		function lintFile(sourceFile,sourceFileRole,fileData) {
+		function lintFileData(sourceFile,fileRole,fileData) {
 
-			let sourceFileBaseName;
+			function isFileRoleIn(...roleList) {
 
-			function isFileRoleIn() {
-
-				return (Array.from(arguments).indexOf(sourceFileRole) >= 0);
+				return roleList.includes(fileRole);
 			}
 
 			function addLintError(lineNumber,errorText) {
 
-				if (!lintResultCollection[sourceFile]) {
+				if (!lintErrorCollection[sourceFile]) {
 					// create collection item for [sourceFile]
-					lintResultCollection[sourceFile] = [];
+					lintErrorCollection[sourceFile] = [];
 				}
 
 				// add error message to stack
-				lintResultCollection[sourceFile].push([lineNumber + 1,errorText]);
+				lintErrorCollection[sourceFile].push({lineNumber,errorText});
 			}
 
 			function lintPrefixChars(firstChar,lineText) {
@@ -225,9 +209,9 @@ function readdirRecurse(startDir,extension,callback) {
 					subStrCount = (firstChar === false) ? 1 : 2;
 
 				// set prefix character check based on file role
-				if (sourceFileRole == FILE_ROLE_COMPONENT) secondChar = 'c';
-				if (sourceFileRole == FILE_ROLE_LAYOUT) secondChar = 'l';
-				if (sourceFileRole == FILE_ROLE_MODULE) secondChar = 'm';
+				if (fileRole == FILE_ROLE_COMPONENT) secondChar = 'c';
+				if (fileRole == FILE_ROLE_LAYOUT) secondChar = 'l';
+				if (fileRole == FILE_ROLE_MODULE) secondChar = 'm';
 
 				return (secondChar === false)
 					? true // variable/placeholder is in a file role we don't need to worry about
@@ -241,13 +225,13 @@ function readdirRecurse(startDir,extension,callback) {
 
 				// validate naming for a config.scss variable
 				if (
-					(sourceFileRole == FILE_ROLE_CONFIG) &&
+					(fileRole == FILE_ROLE_CONFIG) &&
 					(!/^\$[a-z][A-Za-z0-9_]+:/.test(lineText))
 				) return false;
 
 				// validate naming for a layout.scss variable
 				if (
-					(sourceFileRole == FILE_ROLE_LAYOUT) &&
+					(fileRole == FILE_ROLE_LAYOUT) &&
 					(!/^\$l[A-Z][A-Za-z0-9]+:/.test(lineText))
 				) return false;
 
@@ -271,7 +255,7 @@ function readdirRecurse(startDir,extension,callback) {
 
 				// validate naming for a layout placeholder
 				if (
-					(sourceFileRole == FILE_ROLE_LAYOUT) &&
+					(fileRole == FILE_ROLE_LAYOUT) &&
 					(!/^%l[A-Z][A-Za-z0-9]+[,:. {]/.test(lineText))
 				) return false;
 
@@ -281,7 +265,7 @@ function readdirRecurse(startDir,extension,callback) {
 					// e.g. "%cCOMPONENTNAME", rather than "%cCOMPONENTNAME_subName"
 					let isSimple;
 
-					if (sourceFileRole == FILE_ROLE_COMPONENT) {
+					if (fileRole == FILE_ROLE_COMPONENT) {
 						if (RegExp(`^%c${sourceFileBaseName}[,:. {]`).test(lineText.toLowerCase())) {
 							// yes this is a simple placeholder - ensure first character after '%c' is a letter and uppercase
 							isSimple = true;
@@ -315,7 +299,7 @@ function readdirRecurse(startDir,extension,callback) {
 
 				// validate naming for a layout function
 				if (
-					(sourceFileRole == FILE_ROLE_LAYOUT) &&
+					(fileRole == FILE_ROLE_LAYOUT) &&
 					(!/^l[A-Z][A-Za-z0-9]+$/.test(checkName))
 				) return false;
 
@@ -344,16 +328,18 @@ function readdirRecurse(startDir,extension,callback) {
 				return true;
 			}
 
-			// build base name from the source file name (minus a possible leading underscore) used for namespacing checks
-			sourceFileBaseName = path.basename(sourceFile,'.' + SCSS_EXTENSION).toLowerCase();
+			// build base name from the source file name (minus a possible leading underscore) for namespacing checks
+			let sourceFileBaseName = path.basename(sourceFile,`.${SCSS_EXTENSION}`).toLowerCase();
 			sourceFileBaseName = sourceFileBaseName.replace(/^_/,'');
 			console.log(`File: ${sourceFile}`);
 
 			// work over each file line looking for linting errors
-			fileData.split(LINE_SEPARATOR_REGEXP).forEach((lineText,lineNumber) => {
-
+			let lineNumber = 0;
+			for (let lineText of fileData.split(LINE_SEPARATOR_REGEXP)) {
+				// trim up next file line
 				let lineTextTrim = lineText.trim();
 				lineText = lineText.trimRight();
+				lineNumber++;
 
 				// root level comment
 				if (/^\/\//.test(lineText)) {
@@ -369,12 +355,12 @@ function readdirRecurse(startDir,extension,callback) {
 					}
 
 					// done
-					return;
+					continue;
 				}
 
 				// variables
 				if (/^\$[^ ]+:/.test(lineTextTrim)) {
-					if (sourceFileRole == FILE_ROLE_STYLE) {
+					if (fileRole == FILE_ROLE_STYLE) {
 						// no variables in style.scss file allowed
 						addLintError(lineNumber,'Variables should not be defined here, use config.scss file');
 
@@ -429,7 +415,7 @@ function readdirRecurse(startDir,extension,callback) {
 
 				// classes
 				if (/^\./.test(lineTextTrim)) {
-					if (sourceFileRole != FILE_ROLE_MODULE) {
+					if (fileRole != FILE_ROLE_MODULE) {
 						// no class selectors should be here
 						addLintError(lineNumber,'Class selectors should not be used here');
 
@@ -440,56 +426,65 @@ function readdirRecurse(startDir,extension,callback) {
 						}
 					}
 				}
-			});
+			}
 		}
 
-		// queue up each file in resultList
-		resultList.forEach((sourceFile) => {
-
-			// get file role
-			let sourceFileRole = getFileRole(sourceFile);
-			if (sourceFileRole === false) {
-				// skip linting file
-				return;
+		// queue up each file from resultList
+		for (let sourceFile of resultList) {
+			// determine file role
+			let fileRole = getFileRole(sourceFile);
+			if (fileRole === false) {
+				// can't determine - skip
+				continue;
 			}
 
-			// add file to process queue counter and read file
-			openSourceFile(sourceFile,sourceFileRole);
+			// add load/lint steps for file to processing queue
+			processQueue = processQueue
+				.then(() => loadFile(`${baseDir}/${sourceFile}`))
+				.then((fileData) => {
+
+					lintFileData(sourceFile,fileRole,fileData);
+				});
+		}
+
+		// return lint file count and lint error collection
+		return processQueue.then(() => {
+
+			return {lintFileCount,lintErrorCollection};
 		});
 	}
 
-	function renderResults(resultCount,lintedCount,lintResultCollection) {
+	function renderResults(resultCount,lintedCount,lintErrorCollection) {
 
-		function getLintResultSummaryCounts() {
+		function getLintErrorSummaryCounts() {
 
 			let fileCount = 0,
 				errorCount = 0;
 
-			for (let fileName of Object.keys(lintResultCollection)) {
+			for (let fileName of Object.keys(lintErrorCollection)) {
 				fileCount++;
-				errorCount += lintResultCollection[fileName].length;
+				errorCount += lintErrorCollection[fileName].length;
 			}
 
-			return (fileCount > 0) ? [fileCount,errorCount] : false;
+			return (fileCount > 0)
+				? {fileCount,errorCount}
+				: false;
 		}
 
 		function renderErrorDetails() {
 
-			for (let fileName of Object.keys(lintResultCollection)) {
+			for (let fileName of Object.keys(lintErrorCollection)) {
 				console.log(`${fileName}:`);
 
-				lintResultCollection[fileName].forEach((errorItem) => {
-
-					let lineNumber = errorItem[0],
-						paddingSpaces = ' ';
-
+				for (let {lineNumber,errorText} of lintErrorCollection[fileName]) {
 					// calculate padding of line number
+					let paddingSpaces = ' ';
 					while ((lineNumber + paddingSpaces).length < 5) {
 						paddingSpaces += ' ';
 					}
 
-					console.log(`  ${lineNumber}:${paddingSpaces}${errorItem[1]}`);
-				});
+					console.log(`  ${lineNumber}:${paddingSpaces}${errorText}`);
+				}
 
 				console.log();
 			}
@@ -497,40 +492,70 @@ function readdirRecurse(startDir,extension,callback) {
 
 		console.log(`\n\n${lintedCount} files linted (${resultCount - lintedCount} skipped)`);
 
-		let summaryCounts = getLintResultSummaryCounts();
+		let summaryCounts = getLintErrorSummaryCounts();
 		if (summaryCounts === false) {
-			// no errors found
+			// no errors
 			console.log('No linting errors found\n');
 
 		} else {
 			// display error details
-			console.log(`${summaryCounts[1]} errors found in a total of ${summaryCounts[0]} files\n\n`);
-
+			console.log(`${summaryCounts.errorCount} errors found in a total of ${summaryCounts.fileCount} files\n\n`);
 			renderErrorDetails();
 		}
 	}
 
-	// get scan dir from passed args, is not given - current working directory used
-	let scanDir = getScanDir();
-	if (scanDir === false) {
-		// error with scan dir given
-		return;
+	{
+		let processScanDir,
+			resultCount;
+
+		// read and verify scan dir from CLI arguments - if not given use working directory
+		getScanDir()
+			.then((scanDir) => {
+
+				processScanDir = scanDir;
+
+				// find files in [scanDir] to validate
+				return readDirRecursive(processScanDir,SCSS_EXTENSION)
+					.catch(() => {
+
+						return Promise.reject(
+							new Error(`Unable to read ${processScanDir}`)
+						);
+					});
+			})
+			.then((resultList) => {
+
+				if (resultList.length < 1) {
+					// no SCSS files found for linting
+					return Promise.reject(
+						new Error(`Unable to locate any files matching *.${SCSS_EXTENSION}`)
+					);
+
+				} else {
+					// process result list
+					console.log(`Found a total of ${resultList.length} file(s) for potential linting\n`);
+					resultCount = resultList.length;
+					return processResultList(processScanDir,resultList);
+				}
+			})
+			.then((data) => {
+
+				// render results
+				let {lintFileCount,lintErrorCollection} = data;
+
+				renderResults(
+					resultCount,
+					lintFileCount,
+					lintErrorCollection
+				);
+			})
+			.catch((err) => {
+
+				if (err instanceof Error) {
+					logError(err.message);
+				}
+			});
 	}
-
-	// got a valid scanDir, keep going
-	console.log(`Linting: ${scanDir}`);
-	readdirRecurse(scanDir,SCSS_EXTENSION,(resultList) => {
-
-		if (!resultList.length) {
-			// no SCSS files found
-			logError(`Unable to locate any files matching *.${SCSS_EXTENSION}`);
-
-		} else {
-			// process result list
-			console.log(`Found a total of ${resultList.length} file(s) for potential linting\n`);
-			processResultList(scanDir,resultList);
-		}
-	});
 
 	// TODO: add routine(s) to find placeholders that are not used, or used only once and report
 	// TODO: when errors are reported - output the offending class/function/mixin name
