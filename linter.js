@@ -203,25 +203,29 @@ function readDirRecursive(startDir,extension) {
 				lintErrorCollection[sourceFile].push({lineNumber,errorText});
 			}
 
-			function lintPrefixChars(firstChar,lineText) {
-
-				let secondChar = false,
-					subStrCount = (firstChar === false) ? 1 : 2;
+			function lintPrefixChar(firstChar,lineText) {
 
 				// set prefix character check based on file role
-				if (fileRole == FILE_ROLE_COMPONENT) secondChar = 'c';
-				if (fileRole == FILE_ROLE_LAYOUT) secondChar = 'l';
-				if (fileRole == FILE_ROLE_MODULE) secondChar = 'm';
+				let prefixChar = false;
+				if (fileRole == FILE_ROLE_COMPONENT) prefixChar = 'c';
+				if (fileRole == FILE_ROLE_LAYOUT) prefixChar = 'l';
+				if (fileRole == FILE_ROLE_MODULE) prefixChar = 'm';
 
-				return (secondChar === false)
-					? true // variable/placeholder is in a file role we don't need to worry about
-					: (lineText.substr(0,subStrCount) == (((firstChar === false) ? '' : firstChar) + secondChar));
+				if (prefixChar === false) {
+					// variable/placeholder is in a file role we don't need to worry about
+					return true;
+				}
+
+				return (
+					lineText.substr(0,(firstChar === false) ? 1 : 2) ==
+					((firstChar || '') + prefixChar)
+				);
 			}
 
 			function lintVariable(lineText) {
 
 				// check prefix character based on file role
-				if (!lintPrefixChars('$',lineText)) return false;
+				if (!lintPrefixChar('$',lineText)) return false;
 
 				// validate naming for a config.scss variable
 				if (
@@ -237,11 +241,11 @@ function readDirRecursive(startDir,extension) {
 
 				// validate naming for a component/module variable
 				if (isFileRoleIn(FILE_ROLE_COMPONENT,FILE_ROLE_MODULE)) {
-					// after underscore, first character must be lowercase
-					if (!/^\$[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+:/.test(lineText)) return false;
-
 					// ensure prefix namespace for variable matches source file base name
 					if (!RegExp(`^\\$[cm]${sourceFileBaseName}_`).test(lineText.toLowerCase())) return false;
+
+					// after [cm] prefix next character to be uppercase, after underscore first character to be lowercase
+					if (!/^\$[cm][A-Z][A-Za-z]+_[a-z][A-Za-z0-9]+:/.test(lineText)) return false;
 				}
 
 				// all valid
@@ -251,7 +255,7 @@ function readDirRecursive(startDir,extension) {
 			function lintPlaceHolder(lineText) {
 
 				// check prefix character based on file role
-				if (!lintPrefixChars('%',lineText)) return false;
+				if (!lintPrefixChar('%',lineText)) return false;
 
 				// validate naming for a layout placeholder
 				if (
@@ -295,7 +299,7 @@ function readDirRecursive(startDir,extension) {
 
 				// check function prefix character based on file role
 				checkName = checkName[1];
-				if (!lintPrefixChars(false,checkName)) return false;
+				if (!lintPrefixChar(false,checkName)) return false;
 
 				// validate naming for a layout function
 				if (
